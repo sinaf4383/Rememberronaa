@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>یادآور مناسبت‌ها</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#1b1f24;--muted:#6b7280;--line:#e3e7ec;--accent:#0f766e;--accent-t:#fff;--warn:#92400e;--warn-bg:#fef3c7;--today:#dc2626;--soft:#e6f4f2}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1317;--card:#181e24;--text:#e8ecf0;--muted:#98a2ae;--line:#2a323b;--accent:#2dd4bf;--accent-t:#06231f;--warn:#fbbf24;--warn-bg:#3a2d0a;--today:#f87171;--soft:#12302d}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Vazirmatn,Tahoma,system-ui,sans-serif;font-size:16px;line-height:1.6}
+.wrap{max-width:640px;margin:0 auto;padding:16px 14px 96px}
+h1{font-size:20px;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
+.card.today{border-color:var(--today);box-shadow:0 0 0 1px var(--today) inset}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.title{font-weight:700}
+.muted{color:var(--muted);font-size:14px}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;background:var(--soft);color:var(--accent);font-size:13px;font-weight:700}
+.badge.t{background:var(--today);color:#fff}
+.chips{display:flex;gap:8px;margin:8px 0 4px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 14px;border-radius:99px;font:inherit;font-size:14px}
+.chip.on{background:var(--accent);color:var(--accent-t);border-color:var(--accent)}
+label{display:block;font-size:14px;margin:12px 0 4px;color:var(--muted)}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font:inherit}
+textarea{min-height:70px;resize:vertical}
+.btn{border:0;background:var(--accent);color:var(--accent-t);padding:12px 16px;border-radius:12px;font:inherit;font-weight:700;width:100%;margin-top:14px}
+.btn.sec{background:var(--card);color:var(--text);border:1px solid var(--line);font-weight:400}
+.btn.sm{width:auto;margin:0;padding:6px 12px;font-size:14px}
+.btn.del{background:transparent;color:var(--today);border:1px solid var(--line);font-weight:400}
+.banner{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
+.banner .btn{margin-top:8px}
+nav{position:fixed;bottom:0;right:0;left:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;color:var(--muted);padding:8px 2px 6px;font:inherit;font-size:12px}
+nav button span{display:block;font-size:20px;line-height:1.2}
+nav button.on{color:var(--accent);font-weight:700}
+.view{display:none}.view.on{display:block}
+.empty{text-align:center;color:var(--muted);padding:34px 8px}
+#toast{position:fixed;bottom:84px;right:50%;transform:translateX(50%);background:#111;color:#fff;padding:9px 16px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:9}
+#toast.on{opacity:.95}
+a{color:var(--accent)}
+.date3{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px}
+ol{padding-right:20px;margin:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section id="v-home" class="view on">
+  <h1>📅 یادآوری امروز</h1>
+  <div class="sub" id="todayLine"></div>
+  <div id="banners"></div>
+  <div class="chips" id="chips"></div>
+  <div id="remList"></div>
+</section>
+
+<section id="v-add" class="view">
+  <h1 id="formTitle">➕ ثبت مناسبت</h1>
+  <div class="sub">تاریخ را شمسی وارد کنید. سال هم مهم است تا تعداد سال‌های گذشته نشان داده شود.</div>
+  <label>نام مشتری</label>
+  <input id="fName" autocomplete="off">
+  <label>نوع مناسبت</label>
+  <select id="fKind"></select>
+  <div id="customWrap" style="display:none">
+    <label>عنوان مناسبت</label>
+    <input id="fCustom" autocomplete="off" placeholder="مثلاً سالگرد کسب‌وکار">
+  </div>
+  <label>تاریخ شمسی (روز / ماه / سال)</label>
+  <div class="date3">
+    <input id="fDay" inputmode="numeric" placeholder="روز">
+    <select id="fMonth"></select>
+    <input id="fYear" inputmode="numeric" placeholder="سال، مثل ۱۴۰۱">
+  </div>
+  <label>شماره تماس یا توضیح (اختیاری)</label>
+  <textarea id="fNote"></textarea>
+  <button class="btn" id="btnSave">ذخیره</button>
+  <button class="btn sec" id="btnCancel" style="display:none">انصراف از ویرایش</button>
+</section>
+
+<section id="v-list" class="view">
+  <h1>📋 همهٔ مناسبت‌ها</h1>
+  <input id="q" placeholder="🔍 جستجوی نام یا توضیح" autocomplete="off" style="margin:8px 0">
+  <div class="sub" id="count"></div>
+  <div id="allList"></div>
+</section>
+
+<section id="v-set" class="view">
+  <h1>⚙️ پشتیبان و تنظیمات</h1>
+  <div class="card">
+    <div class="title">اطلاعات کجا ذخیره می‌شود؟</div>
+    <div class="muted">فقط روی همین دستگاه (در حافظهٔ همین برنامه). جایی آپلود نمی‌شود. اگر حافظهٔ مرورگر پاک شود یا گوشی عوض شود، بدون فایل پشتیبان اطلاعات از بین می‌رود. پس مرتب پشتیبان بگیرید.</div>
+    <div class="muted" id="persistInfo" style="margin-top:6px"></div>
+  </div>
+  <div class="card">
+    <div class="title">پشتیبان‌گیری</div>
+    <div class="muted">یک فایل می‌سازد. در گوشی می‌توانید آن را به «پیام‌های ذخیره‌شدهٔ تلگرام» یا هر جای دیگر بفرستید.</div>
+    <button class="btn" id="btnExport">💾 ساخت فایل پشتیبان</button>
+    <button class="btn sec" id="btnImport">📂 بازیابی از فایل پشتیبان</button>
+    <input type="file" id="fileIn" accept=".json,application/json" style="display:none">
+    <div class="muted" style="margin-top:6px">بازیابی، مناسبت‌های فایل را به موارد فعلی اضافه می‌کند و چیزی را پاک نمی‌کند.</div>
+  </div>
+  <div class="card" id="fileCard" style="display:none">
+    <div class="title">ذخیرهٔ خودکار در فایل (کامپیوتر)</div>
+    <div class="muted">یک فایل در پوشهٔ دلخواه (مثلاً درایو D) انتخاب کنید. بعد از هر تغییر خودکار در آن ذخیره می‌شود. فقط در Chrome یا Edge کامپیوتر کار می‌کند.</div>
+    <div class="muted" id="fileState" style="margin-top:6px"></div>
+    <button class="btn" id="btnFile">📁 انتخاب فایل ذخیره</button>
+  </div>
+  <div class="card">
+    <div class="title">نصب روی گوشی یا کامپیوتر</div>
+    <button class="btn" id="btnInstall" style="display:none">⬇️ نصب برنامه</button>
+    <div class="muted">اندروید (Chrome): منوی ⋮ ← «Install app» یا «Add to Home screen».<br>آیفون (Safari): دکمهٔ اشتراک‌گذاری ← «Add to Home Screen».</div>
+  </div>
+</section>
+
+</div>
+
+<nav>
+  <button data-tab="home" class="on"><span>📅</span>امروز</button>
+  <button data-tab="add"><span>➕</span>ثبت</button>
+  <button data-tab="list"><span>📋</span>لیست</button>
+  <button data-tab="set"><span>⚙️</span>پشتیبان</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+// ==CAL==
+function div(a,b){return Math.trunc(a/b)}
+function mod(a,b){return a-Math.trunc(a/b)*b}
+const BREAKS=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];
+function jalCal(jy,withoutLeap){
+  const bl=BREAKS.length;let gy=jy+621,leapJ=-14,jp=BREAKS[0],jm,jump=0,leap,leapG,march,n,i;
+  if(jy<jp||jy>=BREAKS[bl-1])throw new Error('bad year');
+  for(i=1;i<bl;i++){jm=BREAKS[i];jump=jm-jp;if(jy<jm)break;leapJ=leapJ+div(jump,33)*8+div(mod(jump,33),4);jp=jm}
+  n=jy-jp;
+  leapJ=leapJ+div(n,33)*8+div(mod(n,33)+3,4);
+  if(mod(jump,33)===4&&jump-n===4)leapJ+=1;
+  leapG=div(gy,4)-div((div(gy,100)+1)*3,4)-150;
+  march=20+leapJ-leapG;
+  if(withoutLeap)return{gy,march};
+  if(jump-n<6)n=n-jump+div(jump+4,33)*33;
+  leap=mod(mod(n+1,33)-1,4);
+  if(leap===-1)leap=4;
+  return{leap,gy,march};
+}
+function g2d(gy,gm,gd){
+  let d=div((gy+div(gm-8,6)+100100)*1461,4)+div(153*mod(gm+9,12)+2,5)+gd-34840408;
+  d=d-div(div(gy+100100+div(gm-8,6),100)*3,4)+752;
+  return d;
+}
+function d2g(jdn){
+  let j=4*jdn+139361631;
+  j=j+div(div(4*jdn+183187720,146097)*3,4)*4-3908;
+  const i=div(mod(j,1461),4)*5+308;
+  const gd=div(mod(i,153),5)+1,gm=mod(div(i,153),12)+1,gy=div(j,1461)-100100+div(8-gm,6);
+  return{gy,gm,gd};
+}
+function j2d(jy,jm,jd){
+  const r=jalCal(jy,true);
+  return g2d(r.gy,3,r.march)+(jm-1)*31-div(jm,7)*(jm-7)+jd-1;
+}
+function d2j(jdn){
+  const gy=d2g(jdn).gy;let jy=gy-621;
+  const r=jalCal(jy,false),jdn1f=g2d(gy,3,r.march);
+  let k=jdn-jdn1f,jm,jd;
+  if(k>=0){
+    if(k<=185){jm=1+div(k,31);jd=mod(k,31)+1;return{jy,jm,jd}}
+    k-=186;
+  }else{jy-=1;k+=179;if(r.leap===1)k+=1}
+  jm=7+div(k,30);jd=mod(k,30)+1;
+  return{jy,jm,jd};
+}
+function isLeapJ(jy){return jalCal(jy,false).leap===0}
+function monthLen(jy,jm){return jm<=6?31:jm<=11?30:(isLeapJ(jy)?30:29)}
+// ==/CAL==
+
+const MONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const KINDS=['🎂 تولد','💍 عقد / عروسی','👶 تولد فرزند','✨ سایر'];
+const FA='۰۱۲۳۴۵۶۷۸۹',AR='٠١٢٣٤٥٦٧٨٩';
+const toFa=s=>String(s).replace(/\d/g,d=>FA[d]);
+const toEn=s=>String(s).replace(/[۰-۹]/g,d=>FA.indexOf(d)).replace(/[٠-٩]/g,d=>AR.indexOf(d));
+const pad=n=>String(n).padStart(2,'0');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const DAY=86400000;
+
+function todayJdn(){const n=new Date();return g2d(n.getFullYear(),n.getMonth()+1,n.getDate())}
+function fmtDate(jy,jm,jd){return `${toFa(jd)} ${MONTHS[jm-1]} ${toFa(jy)}`}
+
+// ---------- ذخیره‌سازی ----------
+const KEY='rona_reminders_v1';
+function normalize(d){
+  const events=[];
+  if(d&&Array.isArray(d.events))for(const e of d.events){
+    const jy=+e.jy,jm=+e.jm,jd=+e.jd;
+    if(!e||typeof e.name!=='string'||!e.name.trim())continue;
+    if(!(jy>=1200&&jy<=1700&&jm>=1&&jm<=12&&jd>=1&&jd<=31))continue;
+    events.push({id:String(e.id||uid()),name:e.name.trim(),kind:String(e.kind||KINDS[3]),jy,jm,jd,note:String(e.note||'')});
+  }
+  return{events,updatedAt:+(d&&d.updatedAt)||0,lastBackup:+(d&&d.lastBackup)||0};
+}
+function loadDb(){try{return normalize(JSON.parse(localStorage.getItem(KEY)))}catch(e){return normalize(null)}}
+let db=loadDb();
+function save(){
+  db.updatedAt=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('ذخیره‌سازی ناموفق بود. حافظهٔ مرورگر پر یا بسته است.')}
+  writeFile().then(renderAll);
+}
+
+// ---------- ذخیرهٔ خودکار در فایل (Chrome/Edge کامپیوتر) ----------
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open('rona',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function kvGet(k){try{const d=await idb();return await new Promise(res=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>res(null)})}catch(e){return null}}
+async function kvSet(k,v){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=res;t.onerror=rej})}catch(e){}}
+async function kvDel(k){try{const d=await idb();await new Promise((res,rej)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=res;t.onerror=rej})}catch(e){}}
+
+const FS=!!window.showSaveFilePicker;
+let fileHandle=null,fileStatus='none'; // none | needs | ok
+async function writeFile(){
+  if(!fileHandle)return;
+  try{
+    if((await fileHandle.queryPermission({mode:'readwrite'}))!=='granted'){fileStatus='needs';return}
+    const w=await fileHandle.createWritable();await w.write(JSON.stringify(db));await w.close();fileStatus='ok';
+  }catch(e){fileStatus='needs'}
+}
+async function syncFromFile(){
+  const f=await fileHandle.getFile(),t=await f.text();
+  if(t.trim()){
+    let d;
+    try{d=normalize(JSON.parse(t))}catch(e){alert('فایل انتخاب‌شده فرمت درست ندارد و استفاده نشد.');fileHandle=null;fileStatus='none';await kvDel('fh');return}
+    if(d.updatedAt>db.updatedAt){db=d;try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}fileStatus='ok';return}
+  }
+  await writeFile();
+}
+async function initFile(){
+  if(!FS)return;
+  fileHandle=await kvGet('fh');
+  if(fileHandle){
+    try{
+      if((await fileHandle.queryPermission({mode:'readwrite'}))==='granted'){await syncFromFile()}else fileStatus='needs';
+    }catch(e){fileStatus='needs'}
+  }
+  renderAll();
+}
+async function connectFile(){
+  try{
+    if(fileHandle){
+      if((await fileHandle.requestPermission({mode:'readwrite'}))!=='granted')return;
+    }else{
+      fileHandle=await window.showSaveFilePicker({suggestedName:'rona-reminders.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+      await kvSet('fh',fileHandle);
+    }
+    await syncFromFile();
+    toast('ذخیرهٔ خودکار فعال شد');renderAll();
+  }catch(e){/* کاربر انصراف داد */}
+}
+
+// ---------- پشتیبان دستی ----------
+async function exportBackup(){
+  const n=new Date(),name=`rona-backup-${n.getFullYear()}${pad(n.getMonth()+1)}${pad(n.getDate())}.json`;
+  const blob=new Blob([JSON.stringify(db,null,1)],{type:'application/json'});
+  const file=new File([blob],name,{type:'application/json'});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name})}
+    else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+  }catch(e){return}
+  db.lastBackup=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
+  toast('پشتیبان ساخته شد');renderAll();
+}
+function importBackup(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    let d;try{d=normalize(JSON.parse(r.result))}catch(e){alert('فایل معتبر نیست.');return}
+    const key=e=>[e.name,e.kind,e.jy,e.jm,e.jd].join('|');
+    const have=new Set(db.events.map(key));let added=0;
+    for(const e of d.events){if(!have.has(key(e))){db.events.push(e);have.add(key(e));added++}}
+    save();toast(`${toFa(added)} مورد جدید اضافه شد`);
+  };
+  r.readAsText(file);
+}
+
+// ---------- نمایش ----------
+let win=7,editId=null,tab='home';
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),2200)}
+function setTab(t){
+  tab=t;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  window.scrollTo(0,0);renderAll();
+}
+function phoneOf(note){
+  const m=toEn(note).match(/(\+?\d[\d\s-]{8,}\d)/);
+  return m?m[1].replace(/[^\d+]/g,''):null;
+}
+function cardHtml(e,diff,years,actions){
+  const ph=phoneOf(e.note);
+  let badge='';
+  if(diff!==null)badge=diff===0?'<span class="badge t">امروز!</span>':`<span class="badge">${diff>0?toFa(diff)+' روز دیگر':toFa(-diff)+' روز پیش'}</span>`;
+  return `<div class="card${diff===0?' today':''}">
+    <div class="row"><div class="title grow">${esc(e.name)}</div>${badge}</div>
+    <div>${esc(e.kind)}</div>
+    <div class="muted">📆 ${fmtDate(e.jy,e.jm,e.jd)}${years>0?` (${toFa(years)} سال از آن تاریخ)`:''}</div>
+    ${e.note?`<div class="muted">📝 ${esc(e.note)}</div>`:''}
+    ${ph?`<div><a href="tel:${esc(ph)}">📞 تماس با ${toFa(ph)}</a></div>`:''}
+    ${actions?`<div class="row" style="margin-top:8px"><button class="btn sec sm" data-edit="${esc(e.id)}">✏️ ویرایش</button><button class="btn del sm" data-del="${esc(e.id)}">🗑 حذف</button></div>`:''}
+  </div>`;
+}
+function occurrences(w){
+  const t=todayJdn(),ty=d2j(t).jy,out=[];
+  for(const e of db.events){
+    for(const y of [ty-1,ty,ty+1]){
+      if(y<e.jy)continue;
+      const diff=j2d(y,e.jm,Math.min(e.jd,monthLen(y,e.jm)))-t;
+      if(Math.abs(diff)<=w){out.push({e,diff,years:y-e.jy});break}
+    }
+  }
+  return out.sort((a,b)=>a.diff-b.diff);
+}
+function renderHome(){
+  const n=new Date();
+  $('todayLine').textContent=n.toLocaleDateString('fa-IR',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+` — بازه: ${toFa(win)} روز قبل تا ${toFa(win)} روز بعد`;
+  $('chips').innerHTML=[7,30,90].map(w=>`<button class="chip${w===win?' on':''}" data-win="${w}">${toFa(w)} روز</button>`).join('');
+  let b='';
+  if(fileHandle&&fileStatus==='needs')b+=`<div class="banner">ذخیرهٔ خودکار در فایل نیاز به تأیید دارد.<br><button class="btn sm" data-act="file">اتصال دوباره</button></div>`;
+  else if(db.events.length&&fileStatus!=='ok'&&Date.now()-db.lastBackup>14*DAY)b+=`<div class="banner">${db.lastBackup?'بیش از ۲ هفته از آخرین پشتیبان‌گیری گذشته.':'هنوز پشتیبان نگرفته‌اید.'}<br><button class="btn sm" data-act="export">پشتیبان‌گیری الان</button></div>`;
+  $('banners').innerHTML=b;
+  const o=occurrences(win);
+  $('remList').innerHTML=!db.events.length?'<div class="empty">هنوز مناسبتی ثبت نشده.<br>از تب «ثبت» شروع کنید.</div>'
+    :!o.length?'<div class="empty">✅ در این بازه مناسبتی نیست.</div>'
+    :o.map(x=>cardHtml(x.e,x.diff,x.years,false)).join('');
+}
+function renderList(){
+  const q=toEn($('q').value).trim();
+  const rows=db.events.filter(e=>!q||e.name.includes(q)||e.note.includes(q)||toEn(e.note).includes(q)).sort((a,b)=>a.jm-b.jm||a.jd-b.jd);
+  $('count').textContent=`${toFa(rows.length)} مورد`;
+  $('allList').innerHTML=rows.length?rows.map(e=>cardHtml(e,null,0,true)).join(''):'<div class="empty">موردی پیدا نشد.</div>';
+}
+function renderSet(){
+  $('fileCard').style.display=FS?'block':'none';
+  $('fileState').textContent=!fileHandle?'غیرفعال':fileStatus==='ok'?'✅ فعال: هر تغییر در فایل ذخیره می‌شود':'⚠️ نیاز به تأیید دوباره (دکمهٔ پایین)';
+  $('btnFile').textContent=fileHandle?(fileStatus==='ok'?'🔄 همگام‌سازی دوباره':'🔓 اتصال دوباره'):'📁 انتخاب فایل ذخیره';
+}
+function renderAll(){renderHome();renderList();renderSet()}
+
+// ---------- فرم ----------
+function initForm(){
+  $('fKind').innerHTML=KINDS.map((k,i)=>`<option value="${i}">${k}</option>`).join('');
+  $('fMonth').innerHTML=MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  $('fKind').onchange=()=>{$('customWrap').style.display=$('fKind').value==String(KINDS.length-1)?'block':'none'};
+}
+function resetForm(){
+  editId=null;
+  ['fName','fCustom','fDay','fYear','fNote'].forEach(i=>$(i).value='');
+  $('fKind').value='0';$('fMonth').value='1';$('customWrap').style.display='none';
+  $('formTitle').textContent='➕ ثبت مناسبت';$('btnSave').textContent='ذخیره';$('btnCancel').style.display='none';
+}
+function startEdit(id){
+  const e=db.events.find(x=>x.id===id);if(!e)return;
+  resetForm();editId=id;
+  $('fName').value=e.name;
+  const i=KINDS.indexOf(e.kind);
+  if(i>=0&&i<KINDS.length-1)$('fKind').value=String(i);
+  else{$('fKind').value=String(KINDS.length-1);$('customWrap').style.display='block';$('fCustom').value=e.kind.replace(/^✨\s*/,'')==='سایر'?'':e.kind.replace(/^✨\s*/,'')}
+  $('fDay').value=e.jd;$('fMonth').value=e.jm;$('fYear').value=e.jy;$('fNote').value=e.note;
+  $('formTitle').textContent='✏️ ویرایش مناسبت';$('btnSave').textContent='ذخیرهٔ تغییرات';$('btnCancel').style.display='block';
+  setTab('add');
+}
+function submitForm(){
+  const name=$('fName').value.trim();
+  if(!name){alert('نام مشتری را بنویسید.');return}
+  const jy=parseInt(toEn($('fYear').value),10),jm=parseInt($('fMonth').value,10),jd=parseInt(toEn($('fDay').value),10);
+  if(!(jy>=1250&&jy<=1500)){alert('سال را درست بنویسید، مثل ۱۴۰۱');return}
+  if(!(jd>=1&&jd<=monthLen(jy,jm))){alert(`روز باید بین ۱ و ${toFa(monthLen(jy,jm))} باشد.`);return}
+  let kind=KINDS[parseInt($('fKind').value,10)];
+  if($('fKind').value===String(KINDS.length-1)){const c=$('fCustom').value.trim();if(c)kind='✨ '+c}
+  const rec={name,kind,jy,jm,jd,note:$('fNote').value.trim()};
+  const wasEdit=!!editId;
+  if(wasEdit){const e=db.events.find(x=>x.id===editId);Object.assign(e,rec);toast('تغییرات ذخیره شد')}
+  else{db.events.push({id:uid(),...rec});toast('ثبت شد ✅')}
+  save();resetForm();
+  setTab(wasEdit?'list':'add');
+}
+
+// ---------- رویدادها ----------
+document.addEventListener('click',ev=>{
+  const t=ev.target.closest('button');if(!t)return;
+  if(t.dataset.tab)setTab(t.dataset.tab);
+  else if(t.dataset.win){win=+t.dataset.win;renderHome()}
+  else if(t.dataset.edit)startEdit(t.dataset.edit);
+  else if(t.dataset.del){
+    const e=db.events.find(x=>x.id===t.dataset.del);
+    if(e&&confirm(`«${e.name}» حذف شود؟ این کار قابل برگشت نیست.`)){db.events=db.events.filter(x=>x.id!==e.id);save();toast('حذف شد')}
+  }
+  else if(t.dataset.act==='export')exportBackup();
+  else if(t.dataset.act==='file')connectFile();
+});
+$('btnSave').onclick=submitForm;
+$('btnCancel').onclick=()=>{resetForm();setTab('list')};
+$('btnExport').onclick=exportBackup;
+$('btnImport').onclick=()=>$('fileIn').click();
+$('fileIn').onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0]);e.target.value=''};
+$('btnFile').onclick=connectFile;
+$('q').oninput=renderList;
+
+let deferred=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;$('btnInstall').style.display='block'});
+$('btnInstall').onclick=async()=>{if(!deferred)return;deferred.prompt();await deferred.userChoice;deferred=null;$('btnInstall').style.display='none'};
+
+initForm();resetForm();renderAll();initFile();
+if(navigator.storage&&navigator.storage.persist){
+  navigator.storage.persist().then(ok=>{$('persistInfo').textContent=ok?'✅ حافظهٔ برنامه در برابر پاک‌سازی خودکار محافظت شده است.':'ℹ️ مرورگر ممکن است در کمبود حافظه داده‌ها را پاک کند. پشتیبان بگیرید.'}).catch(()=>{});
+}
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
